@@ -3,8 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { addRun, getPrompt } from '../lib/store'
 import { extractVars, missingVars, render } from '../lib/template'
-import { MODELS, runPrompt } from '../lib/claude'
+import { MODELS, canRun, runPrompt } from '../lib/claude'
 
+// Fill in {{variables}} and take the finished prompt away — by copy/paste into
+// whatever tool you use. Direct Claude execution is an optional extra that only
+// appears when a Worker is configured (VITE_WORKER_BASE).
 export default function Run() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -16,6 +19,7 @@ export default function Run() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     getPrompt(user.uid, id).then((p) => {
@@ -34,6 +38,21 @@ export default function Run() {
   const rendered = useMemo(() => render(prompt?.body || '', values), [prompt, values])
   const missing = useMemo(() => missingVars(prompt?.body || '', values), [prompt, values])
 
+  const remember = () => {
+    try {
+      localStorage.setItem(`vars:${id}`, JSON.stringify(values))
+    } catch {
+      /* ignore unwritable storage */
+    }
+  }
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(rendered)
+    remember()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   const execute = async () => {
     setBusy(true)
     setError(null)
@@ -41,11 +60,7 @@ export default function Run() {
     try {
       const res = await runPrompt({ prompt: rendered, model, system })
       setResult(res)
-      try {
-        localStorage.setItem(`vars:${id}`, JSON.stringify(values))
-      } catch {
-        /* ignore unwritable storage */
-      }
+      remember()
       await addRun(user.uid, {
         promptId: id,
         promptTitle: prompt.title,
@@ -68,23 +83,28 @@ export default function Run() {
   return (
     <>
       <div className="page-head">
-        <h1>실행 — {prompt.title}</h1>
+        <h1>{prompt.title}</h1>
         <div className="spacer" />
         <button className="ghost" onClick={() => nav(`/p/${id}`)}>
           돌아가기
         </button>
-        <button className="primary" onClick={execute} disabled={busy}>
-          {busy ? '실행 중…' : 'Claude로 실행'}
+        <button className="primary" onClick={copy}>
+          {copied ? '복사됨 ✓' : '완성된 프롬프트 복사'}
         </button>
+        {canRun && (
+          <button onClick={execute} disabled={busy}>
+            {busy ? '실행 중…' : 'Claude로 실행'}
+          </button>
+        )}
       </div>
 
       {error && <div className="error" style={{ marginBottom: 16 }}>{error}</div>}
 
       <div className="grid-2">
         <div className="panel">
-          <h2>변수</h2>
+          <h2>변수 채우기</h2>
           {vars.length === 0 ? (
-            <p className="small muted">이 프롬프트에는 변수가 없습니다. 그대로 실행됩니다.</p>
+            <p className="small muted">이 프롬프트에는 변수가 없습니다. 오른쪽 내용을 그대로 복사해서 쓰세요.</p>
           ) : (
             vars.map((v) => (
               <label className="field" key={v}>
@@ -98,25 +118,29 @@ export default function Run() {
             ))
           )}
 
-          <label className="field">
-            <span>모델</span>
-            <select value={model} onChange={(e) => setModel(e.target.value)}>
-              {MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>시스템 프롬프트 (선택)</span>
-            <textarea rows={2} value={system} onChange={(e) => setSystem(e.target.value)} />
-          </label>
+          {canRun && (
+            <>
+              <label className="field">
+                <span>모델</span>
+                <select value={model} onChange={(e) => setModel(e.target.value)}>
+                  {MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>시스템 프롬프트 (선택)</span>
+                <textarea rows={2} value={system} onChange={(e) => setSystem(e.target.value)} />
+              </label>
+            </>
+          )}
         </div>
 
         <div className="panel">
           <h2>
-            최종 프롬프트{' '}
+            완성된 프롬프트{' '}
             {missing.length > 0 && <span className="small muted">— 미입력: {missing.join(', ')}</span>}
           </h2>
           <pre className="output">{rendered}</pre>

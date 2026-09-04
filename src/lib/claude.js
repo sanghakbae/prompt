@@ -1,6 +1,10 @@
-// Calls our Cloudflare Worker, which holds the Anthropic API key as a secret.
-// The key never reaches the browser.
+// Optional Claude execution. The app works fully without it — the run page
+// always renders the prompt for copy/paste, and only offers "Claude로 실행"
+// when a Worker URL is configured (VITE_WORKER_BASE). The Anthropic API key,
+// if used at all, lives only in that Worker — never in the browser.
 const BASE = import.meta.env.VITE_WORKER_BASE || ''
+
+export const canRun = Boolean(BASE)
 
 export const MODELS = [
   { id: 'claude-opus-5', label: 'Opus 5 — 가장 강력' },

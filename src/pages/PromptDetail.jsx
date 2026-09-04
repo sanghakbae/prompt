@@ -65,7 +65,7 @@ export default function PromptDetail() {
         <button onClick={copy}>{copied ? '복사됨 ✓' : '복사'}</button>
         <button onClick={() => nav(`/p/${id}/edit`)}>수정</button>
         <button className="primary" onClick={() => nav(`/p/${id}/run`)}>
-          실행
+          사용하기
         </button>
         <button className="ghost danger" onClick={remove}>
           삭제

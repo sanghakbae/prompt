@@ -6,6 +6,7 @@ import PromptEditor from './pages/PromptEditor'
 import PromptDetail from './pages/PromptDetail'
 import Run from './pages/Run'
 import RunHistory from './pages/RunHistory'
+import { canRun } from './lib/claude'
 
 export default function App() {
   const { user, loading, signOut, configured } = useAuth()
@@ -35,7 +36,7 @@ export default function App() {
             프롬프트
           </NavLink>
           <NavLink to="/new">새 프롬프트</NavLink>
-          <NavLink to="/history">실행 기록</NavLink>
+          {canRun && <NavLink to="/history">실행 기록</NavLink>}
         </nav>
         <div className="me">
           <span>{user.email}</span>
