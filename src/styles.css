@@ -58,7 +58,9 @@ code, pre, textarea.mono { font-family: 'SF Mono', ui-monospace, Menlo, monospac
 .topbar nav a.active { color: var(--text); background: var(--accent-soft); }
 .me { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
 
-main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+/* Content spans the full window width — the panels below handle their own
+   internal layout, so wide screens get more columns instead of dead margins. */
+main { width: 100%; padding: 24px 24px 80px; }
 
 /* ---- controls ---- */
 button {
@@ -96,8 +98,12 @@ label.field > span { display: block; font-size: 12px; color: var(--muted); margi
 .page-head h1 { font-size: 20px; margin: 0; }
 .spacer { margin-left: auto; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+@media (max-width: 640px) {
+  main { padding: 16px 14px 60px; }
+  .topbar { flex-wrap: wrap; gap: 10px 14px; }
+  .me { font-size: 11px; }
+}
 
 .panel {
   background: var(--panel);
