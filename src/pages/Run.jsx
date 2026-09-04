@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { addRun, getPrompt } from '../lib/store'
 import { extractVars, missingVars, render } from '../lib/template'
 import { MODELS, canRun, runPrompt } from '../lib/claude'
+import { copyText } from '../lib/clipboard'
 
 // Fill in {{variables}} and take the finished prompt away — by copy/paste into
 // whatever tool you use. Direct Claude execution is an optional extra that only
@@ -13,6 +14,7 @@ export default function Run() {
   const { user } = useAuth()
   const nav = useNavigate()
   const [prompt, setPrompt] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [values, setValues] = useState({})
   const [model, setModel] = useState(MODELS[1].id)
   const [system, setSystem] = useState('')
@@ -24,6 +26,7 @@ export default function Run() {
   useEffect(() => {
     getPrompt(user.uid, id).then((p) => {
       setPrompt(p)
+      setLoading(false)
       // Remember the last values used for this prompt so reruns are quick.
       try {
         const saved = localStorage.getItem(`vars:${id}`)
@@ -32,6 +35,10 @@ export default function Run() {
         /* ignore unreadable storage */
       }
     })
+      .catch((e) => {
+        setError(String(e?.message || e))
+        setLoading(false)
+      })
   }, [id, user.uid])
 
   const vars = useMemo(() => extractVars(prompt?.body || ''), [prompt])
@@ -47,7 +54,7 @@ export default function Run() {
   }
 
   const copy = async () => {
-    await navigator.clipboard.writeText(rendered)
+    if (!(await copyText(rendered))) return setError('복사에 실패했습니다. 오른쪽 내용을 직접 선택해 복사해주세요.')
     remember()
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
@@ -78,7 +85,8 @@ export default function Run() {
     }
   }
 
-  if (!prompt) return <div className="empty">불러오는 중…</div>
+  if (loading) return <div className="empty">불러오는 중…</div>
+  if (!prompt) return <div className="empty">삭제되었거나 존재하지 않는 프롬프트입니다.</div>
 
   return (
     <>
@@ -158,7 +166,7 @@ export default function Run() {
           </h2>
           <pre className="output">{result.output}</pre>
           <div className="row" style={{ marginTop: 12 }}>
-            <button onClick={() => navigator.clipboard.writeText(result.output)}>결과 복사</button>
+            <button onClick={() => copyText(result.output)}>결과 복사</button>
           </div>
         </div>
       )}

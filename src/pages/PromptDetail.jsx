@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { deletePrompt, getPrompt, listVersions, restoreVersion } from '../lib/store'
 import { extractVars } from '../lib/template'
 import Diff from '../components/Diff'
+import { copyText } from '../lib/clipboard'
 
 const fmt = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('ko-KR') : '')
 
@@ -15,13 +16,19 @@ export default function PromptDetail() {
   const [versions, setVersions] = useState([])
   const [selected, setSelected] = useState(null) // version compared against current
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
 
   const load = async () => {
-    const [p, vs] = await Promise.all([getPrompt(user.uid, id), listVersions(user.uid, id)])
-    setPrompt(p)
-    setVersions(vs)
-    setLoading(false)
+    try {
+      const [p, vs] = await Promise.all([getPrompt(user.uid, id), listVersions(user.uid, id)])
+      setPrompt(p)
+      setVersions(vs)
+    } catch (e) {
+      setError(String(e?.message || e))
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -30,7 +37,7 @@ export default function PromptDetail() {
   }, [id, user.uid])
 
   const copy = async () => {
-    await navigator.clipboard.writeText(prompt.body)
+    if (!(await copyText(prompt.body))) return
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -49,6 +56,7 @@ export default function PromptDetail() {
   }
 
   if (loading) return <div className="empty">불러오는 중…</div>
+  if (error) return <div className="error">{error}</div>
   if (!prompt) return <div className="empty">프롬프트를 찾을 수 없습니다.</div>
 
   const vars = extractVars(prompt.body)

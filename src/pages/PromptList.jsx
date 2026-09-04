@@ -11,6 +11,7 @@ export default function PromptList() {
   const nav = useNavigate()
   const [prompts, setPrompts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [q, setQ] = useState('')
   const [tag, setTag] = useState('')
   const [favOnly, setFavOnly] = useState(false)
@@ -18,6 +19,7 @@ export default function PromptList() {
   useEffect(() => {
     listPrompts(user.uid)
       .then(setPrompts)
+      .catch((e) => setError(String(e?.message || e)))
       .finally(() => setLoading(false))
   }, [user.uid])
 
@@ -42,7 +44,13 @@ export default function PromptList() {
     e.stopPropagation()
     const favorite = !p.favorite
     setPrompts((list) => list.map((x) => (x.id === p.id ? { ...x, favorite } : x)))
-    await toggleFavorite(user.uid, p.id, favorite)
+    try {
+      await toggleFavorite(user.uid, p.id, favorite)
+    } catch (err) {
+      // Put the star back rather than showing a state the server never accepted.
+      setPrompts((list) => list.map((x) => (x.id === p.id ? { ...x, favorite: !favorite } : x)))
+      setError(String(err?.message || err))
+    }
   }
 
   return (
@@ -55,6 +63,8 @@ export default function PromptList() {
           + 새 프롬프트
         </button>
       </div>
+
+      {error && <div className="error" style={{ marginBottom: 16 }}>{error}</div>}
 
       <div className="row" style={{ marginBottom: 16 }}>
         <input

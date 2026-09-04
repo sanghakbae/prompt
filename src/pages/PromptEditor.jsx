@@ -26,6 +26,7 @@ export default function PromptEditor() {
         setForm({ ...BLANK, ...p })
         setOriginalBody(p.body || '')
       })
+      .catch((e) => setError(String(e?.message || e)))
       .finally(() => setLoading(false))
   }, [id, user.uid])
 
@@ -48,6 +49,7 @@ export default function PromptEditor() {
   }
 
   if (loading) return <div className="empty">불러오는 중…</div>
+  if (id && !form.body && error) return <div className="error">{error}</div>
 
   return (
     <form onSubmit={submit}>

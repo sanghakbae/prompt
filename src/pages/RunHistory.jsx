@@ -9,11 +9,13 @@ export default function RunHistory() {
   const { user } = useAuth()
   const [runs, setRuns] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [open, setOpen] = useState(null)
 
   useEffect(() => {
     listRuns(user.uid)
       .then(setRuns)
+      .catch((e) => setError(String(e?.message || e)))
       .finally(() => setLoading(false))
   }, [user.uid])
 
@@ -23,6 +25,7 @@ export default function RunHistory() {
   }
 
   if (loading) return <div className="empty">불러오는 중…</div>
+  if (error) return <div className="error">{error}</div>
   if (runs.length === 0) return <div className="empty">아직 실행 기록이 없습니다.</div>
 
   return (
