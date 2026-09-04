@@ -41,7 +41,9 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: "741642074790"
           VITE_FIREBASE_APP_ID: "1:741642074790:web:78d040e84ee940f03d1267"
           VITE_FIREBASE_MEASUREMENT_ID: G-HEF0XSYLV4
-          VITE_ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS || 'qa@muhayu.com' }}
+          # Empty = any Google account may sign in. Set the ALLOWED_EMAILS repository
+          # variable (comma separated) to restrict it again.
+          VITE_ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS }}
           # Set WORKER_BASE to the deployed Worker URL to enable prompt execution.
           VITE_WORKER_BASE: ${{ vars.WORKER_BASE }}
 

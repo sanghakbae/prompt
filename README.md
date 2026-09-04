@@ -56,7 +56,7 @@ npm run worker:dev                          # Vite가 /run 을 :8798로 프록�
 2. Authentication → Google 로그인 사용 설정, 승인된 도메인에 `localhost` 와 배포 도메인 추가
 3. Firestore 생성 후 규칙 배포: `npx firebase deploy --only firestore:rules`
 
-`VITE_ALLOWED_EMAILS` 에 이메일을 넣으면 그 계정만 로그인할 수 있습니다.
+`VITE_ALLOWED_EMAILS` 는 비워두면 모든 Google 계정이 로그인할 수 있습니다. 콤마로 구분한 이메일을 넣으면 그 계정만 허용됩니다. 데이터는 계정(uid)별로 완전히 분리되어 서로의 프롬프트는 보이지 않습니다.
 
 ## 배포
 
