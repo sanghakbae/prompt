@@ -1,0 +1,9 @@
+name = "prompt-manager-proxy"
+main = "worker/index.js"
+compatibility_date = "2024-12-01"
+
+# prompt.sanghak.kr is served by GitHub Pages (DNS-only), so the frontend calls
+# this Worker cross-origin on its workers.dev URL (CORS handled in code).
+workers_dev = true
+
+# Set the API key with: npx wrangler secret put ANTHROPIC_API_KEY
