@@ -40,7 +40,7 @@ export default function PromptEditor() {
     getPrompt(user.uid, id)
       .then((p) => {
         if (!p) return setError('프롬프트를 찾을 수 없습니다.')
-        setForm({ ...BLANK, ...p })
+        setForm({ ...BLANK, ...p, tags: p.tags || [] })
         setOriginalBody(p.body || '')
       })
       .catch((e) => setError(String(e?.message || e)))
@@ -48,6 +48,13 @@ export default function PromptEditor() {
   }, [id, user.uid])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  const applyExample = (ex) => {
+    const typed = form.title || form.body || form.description || (form.tags || []).length
+    if (typed && !confirm('작성 중인 내용을 예시로 덮어씁니다. 계속할까요?')) return
+    // Clone tags — the form must not hand edits back to the shared constant.
+    setForm({ ...BLANK, ...ex, tags: [...(ex.tags || [])] })
+  }
   const vars = extractVars(form.body)
   const bodyChanged = !!id && form.body !== originalBody
 
@@ -116,7 +123,7 @@ export default function PromptEditor() {
                     type="button"
                     key={ex.title}
                     className="chip"
-                    onClick={() => setForm({ ...BLANK, ...ex })}
+                    onClick={() => applyExample(ex)}
                   >
                     {ex.title}
                   </button>

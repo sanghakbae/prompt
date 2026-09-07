@@ -16,7 +16,8 @@ export default function PromptDetail() {
   const [versions, setVersions] = useState([])
   const [selected, setSelected] = useState(null) // version compared against current
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loadError, setLoadError] = useState(null)
+  const [actionError, setActionError] = useState(null) // non-fatal: keeps the page up
   const [copied, setCopied] = useState(false)
 
   const load = async () => {
@@ -25,7 +26,7 @@ export default function PromptDetail() {
       setPrompt(p)
       setVersions(vs)
     } catch (e) {
-      setError(String(e?.message || e))
+      setLoadError(String(e?.message || e))
     } finally {
       setLoading(false)
     }
@@ -37,26 +38,39 @@ export default function PromptDetail() {
   }, [id, user.uid])
 
   const copy = async () => {
-    if (!(await copyText(prompt.body))) return
+    setActionError(null)
+    if (!(await copyText(prompt.body))) {
+      return setActionError('복사에 실패했습니다. 본문을 직접 선택해 복사해주세요.')
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
 
   const remove = async () => {
     if (!confirm(`"${prompt.title}" 프롬프트와 모든 버전 기록을 삭제합니다. 계속할까요?`)) return
-    await deletePrompt(user.uid, id)
-    nav('/')
+    setActionError(null)
+    try {
+      await deletePrompt(user.uid, id)
+      nav('/')
+    } catch (e) {
+      setActionError(String(e?.message || e))
+    }
   }
 
   const restore = async (v) => {
     if (!confirm(`v${v.no} 내용으로 되돌립니다. (새 버전으로 기록됩니다)`)) return
-    await restoreVersion(user.uid, id, v)
-    setSelected(null)
-    await load()
+    setActionError(null)
+    try {
+      await restoreVersion(user.uid, id, v)
+      setSelected(null)
+      await load()
+    } catch (e) {
+      setActionError(String(e?.message || e))
+    }
   }
 
   if (loading) return <div className="empty">불러오는 중…</div>
-  if (error) return <div className="error">{error}</div>
+  if (loadError) return <div className="error">{loadError}</div>
   if (!prompt) return <div className="empty">프롬프트를 찾을 수 없습니다.</div>
 
   const vars = extractVars(prompt.body)
@@ -80,6 +94,7 @@ export default function PromptDetail() {
         </button>
       </div>
 
+      {actionError && <div className="error" style={{ marginBottom: 12 }}>{actionError}</div>}
       {prompt.description && <p className="muted" style={{ marginTop: -8 }}>{prompt.description}</p>}
       <div className="row" style={{ marginBottom: 16 }}>
         {prompt.category && <span className="tag plain">{prompt.category}</span>}

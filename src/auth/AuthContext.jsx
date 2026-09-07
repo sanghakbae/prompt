@@ -40,7 +40,10 @@ export function AuthProvider({ children }) {
         setUser(null)
       } else {
         setUser(u)
-        setError(null)
+        // Only a successful sign-in clears the message. The sign-out above also
+        // fires this callback with u === null, which used to erase the
+        // "허용되지 않은 계정" error before it could be read.
+        if (u) setError(null)
       }
       setLoading(false)
     })

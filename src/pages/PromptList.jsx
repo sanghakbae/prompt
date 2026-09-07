@@ -46,7 +46,9 @@ export default function PromptList() {
     setSeeding(true)
     setError(null)
     try {
-      for (const ex of EXAMPLES) await savePrompt(user.uid, ex, { note: '예시 프롬프트' })
+      for (const ex of EXAMPLES) {
+        await savePrompt(user.uid, { ...ex, tags: [...ex.tags] }, { note: '예시 프롬프트' })
+      }
       setPrompts(await listPrompts(user.uid))
     } catch (e) {
       setError(String(e?.message || e))

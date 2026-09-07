@@ -20,12 +20,16 @@ export default function RunHistory() {
   }, [user.uid])
 
   const remove = async (id) => {
-    await deleteRun(user.uid, id)
-    setRuns((r) => r.filter((x) => x.id !== id))
+    try {
+      await deleteRun(user.uid, id)
+      setRuns((r) => r.filter((x) => x.id !== id))
+    } catch (e) {
+      setError(String(e?.message || e))
+    }
   }
 
   if (loading) return <div className="empty">불러오는 중…</div>
-  if (error) return <div className="error">{error}</div>
+  if (error && runs.length === 0) return <div className="error">{error}</div>
   if (runs.length === 0) return <div className="empty">아직 실행 기록이 없습니다.</div>
 
   return (
@@ -34,6 +38,8 @@ export default function RunHistory() {
         <h1>실행 기록</h1>
         <span className="muted small">{runs.length}건</span>
       </div>
+
+      {error && <div className="error" style={{ marginBottom: 12 }}>{error}</div>}
 
       <div className="vlist" style={{ maxHeight: 'none' }}>
         {runs.map((r) => (
