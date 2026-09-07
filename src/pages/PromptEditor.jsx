@@ -4,8 +4,25 @@ import { useAuth } from '../auth/AuthContext'
 import { getPrompt, savePrompt } from '../lib/store'
 import { extractVars } from '../lib/template'
 import TagInput from '../components/TagInput'
+import { EXAMPLES } from '../lib/examples'
 
 const BLANK = { title: '', description: '', category: '', body: '', tags: [], favorite: false }
+
+const PLACEHOLDER = `당신은 (역할)입니다.
+
+## 입력
+{{입력}}
+
+## 판단 기준
+1.
+2.
+
+## 출력 형식
+(표·목록·문장 등 원하는 형태를 구체적으로)
+
+## 지켜야 할 것
+- 모르는 것은 추측하지 말고 "확인 필요"로 표시
+-`
 
 export default function PromptEditor() {
   const { id } = useParams()
@@ -87,6 +104,27 @@ export default function PromptEditor() {
         </div>
 
         <div className="panel">
+          {!id && (
+            <>
+              <h2>예시에서 시작</h2>
+              <p className="small muted" style={{ marginTop: -6 }}>
+                고르면 아래 내용이 채워집니다. 그대로 고쳐 쓰세요.
+              </p>
+              <div className="row" style={{ marginBottom: 18 }}>
+                {EXAMPLES.map((ex) => (
+                  <button
+                    type="button"
+                    key={ex.title}
+                    className="chip"
+                    onClick={() => setForm({ ...BLANK, ...ex })}
+                  >
+                    {ex.title}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
           <h2>변수</h2>
           {vars.length === 0 ? (
             <p className="small muted">
@@ -122,7 +160,7 @@ export default function PromptEditor() {
           rows={18}
           value={form.body}
           onChange={set('body')}
-          placeholder={'예)\n다음 코드를 리뷰해줘.\n\n언어: {{언어}}\n코드:\n{{코드}}'}
+          placeholder={PLACEHOLDER}
         />
       </div>
     </form>

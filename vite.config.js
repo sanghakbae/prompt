@@ -16,6 +16,9 @@ export default defineConfig({
     },
   },
   server: {
+    // 5173 is commonly taken by other local projects; PORT still wins when the
+    // launcher assigns one.
+    port: Number(process.env.PORT) || 5183,
     proxy: { '/run': 'http://localhost:8798' },
   },
 })
