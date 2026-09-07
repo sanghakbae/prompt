@@ -1,8 +1,24 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from 'firebase/auth'
+import {
+  getRedirectResult,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut as fbSignOut,
+} from 'firebase/auth'
 import { auth, googleProvider, isFirebaseConfigured, ALLOWED_EMAILS } from '../firebase'
 
 const AuthContext = createContext(null)
+
+// Popup sign-in breaks in browsers that apply a strict Cross-Origin-Opener-Policy
+// (and in in-app webviews): Firebase can no longer poll the popup, so the flow
+// dies reporting the popup as closed. Fall back to a full-page redirect there.
+const REDIRECT_FALLBACK = new Set([
+  'auth/popup-blocked',
+  'auth/popup-closed-by-user',
+  'auth/operation-not-supported-in-this-environment',
+  'auth/web-storage-unsupported',
+])
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -14,6 +30,9 @@ export function AuthProvider({ children }) {
       setLoading(false)
       return
     }
+    // Surfaces the outcome of a redirect sign-in started before the reload.
+    getRedirectResult(auth).catch((e) => setError(e.message))
+
     return onAuthStateChanged(auth, (u) => {
       if (u && ALLOWED_EMAILS.length && !ALLOWED_EMAILS.includes((u.email || '').toLowerCase())) {
         fbSignOut(auth)
@@ -32,6 +51,15 @@ export function AuthProvider({ children }) {
     try {
       await signInWithPopup(auth, googleProvider)
     } catch (e) {
+      if (REDIRECT_FALLBACK.has(e.code)) {
+        try {
+          await signInWithRedirect(auth, googleProvider)
+          return
+        } catch (e2) {
+          return setError(e2.message)
+        }
+      }
+      if (e.code === 'auth/cancelled-popup-request') return // a second click superseded the first
       setError(e.message)
     }
   }
